@@ -1,0 +1,9 @@
+/**/
+
+body {
+	background-color: #27B355;
+}
+
+button[name="index"] {
+	border: none;
+}

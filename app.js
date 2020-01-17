@@ -5,6 +5,9 @@ const notes = [];
 
 const server = http.createServer( (req, res ) => {
 	const URL = req.url;
+	const URL_ARR =URL.split( '/' );
+	URL_ARR.splice( 0, 1);
+
 	const METHOD = req.method;
 
 	console.log( `HTTP request received: url=${URL}, method=${METHOD}` );
@@ -12,10 +15,11 @@ const server = http.createServer( (req, res ) => {
 	const FRAME = `
 	<html>
 	<head>
-		<meta charset="utf-8">
+		<meta charset="UTF-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
         <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
         <title>MEMO APPI</title>
+        <link rel="stylesheet" type="text/css" href="static/style.css">
 	</head>
 	<body>
 		###CONTENT###
@@ -30,11 +34,11 @@ const server = http.createServer( (req, res ) => {
 	if( URL == '/' )
 	{
 		let form = `
-			<form action="add-note" method="POST" accept-charset="UTF-8">
-				<input type="text" name="note" value="###NOTE###" tabindex="0">
+			<form action="add-note" method="POST">
+				<input type="text" name="note" value="###NOTE###" tabindex="0" autofocus>
 				<button type="submit">Add</button>
 			</form>
-			<form action="delete-note" method="POST" accept-charset="UTF-8">
+			<form action="delete-note" method="POST">
 				<input type="number" name="index" min="0" max="`+(notes.length-1)+`">
 				<button type="submit">Delete</button>
 			</form>
@@ -53,6 +57,23 @@ const server = http.createServer( (req, res ) => {
 		form = form.replace( '###NOTE###', '' );
 		res.write( FRAME.replace( '###CONTENT###', form ) );
 		res.end();
+		return;
+	}
+	else if( URL_ARR[0] == 'static' || URL == '/favicon.ico' )
+	{
+		fs.readFile('.'+URL, (err, data) => {
+			if( err )
+			{
+				console.log(err);
+				res.statusCode = 404;
+				res.end();
+				return;
+			}
+
+            res.write(data);
+            res.end();
+        });
+        return;
 	}
 	else if( URL == '/delete-note' && METHOD == 'POST' )
 	{
@@ -69,7 +90,7 @@ const server = http.createServer( (req, res ) => {
 		  res.setHeader( 'Location', '/' );
 		  res.end();
 		});
-
+		return;
 	}
 	else if( URL == '/add-note' && METHOD == 'POST' )
 	{
@@ -78,6 +99,7 @@ const server = http.createServer( (req, res ) => {
 		  body.push(chunk);
 		}).on('end', () => {
 		  body = Buffer.concat(body).toString();
+		  body = decodeURIComponent(body);
 		  body = body.split( '=' );
 		  notes.push( body[1] );
 		  res.statusCode = 303;
